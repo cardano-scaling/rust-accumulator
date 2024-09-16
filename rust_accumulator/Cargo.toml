@@ -1,0 +1,14 @@
+[package]
+name = "rust_accumulator"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "rust_accumulator"
+crate-type = ["cdylib"]
+
+[dependencies]
+blstrs = "0.7.1" 
+ff = "0.13"
+group = "0.13"
+rand = "0.8"

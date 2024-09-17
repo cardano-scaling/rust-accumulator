@@ -5,11 +5,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     naersk = {
       url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";  # Follow the nixpkgs version
+      inputs.nixpkgs.follows = "nixpkgs"; # Follow the nixpkgs version
     };
     fenix = {
       url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";  # Follow the nixpkgs version
+      inputs.nixpkgs.follows = "nixpkgs"; # Follow the nixpkgs version
     };
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -25,7 +25,7 @@
           cbindgen = pkgs.rust-cbindgen;
         };
 
-        naersk' = pkgs.callPackage naersk {};
+        naersk' = pkgs.callPackage naersk { };
 
         # Build the Rust library via naersk
         cargoProject = naersk'.buildPackage {
@@ -64,9 +64,9 @@
             void get_poly_commitment_g1(G1Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G1Projective *points_ptr, size_t points_len);
 
             void get_poly_commitment_g2(G2Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G2Projective *points_ptr, size_t points_len);
-            
+
             EOF
-              '';
+          '';
         };
 
         # This derivation is the C version of the library that can be imported via Haskell.nix
@@ -95,16 +95,16 @@
             mkdir -p $out/lib/pkgconfig
             cat <<EOF > $out/lib/pkgconfig/librust_accumulator.pc
             prefix=$out
-            exec_prefix=''\\''${prefix}
-            libdir=''\\''${exec_prefix}/lib
-            includedir=''\\''${prefix}/include
+            exec_prefix=\''${prefix}
+            libdir=\''${exec_prefix}/lib
+            includedir=\''${prefix}/include
 
             Name: librust_accumulator
             Description: A rust based lib for a PCS based accumulator
             Version: 1.0
 
-            Cflags: -I''\\''${includedir}
-            Libs: -L''\\''${libdir} -lrust_accumulator
+            Cflags: -I\''${includedir}
+            Libs: -L\''${libdir} -lrust_accumulator
             EOF
           '';
         };
@@ -113,12 +113,8 @@
         defaultPackage = cLibrary;
 
         devShell = pkgs.mkShell {
-          buildInputs = [
-            toolchain.rustc
-            toolchain.cargo
-            pkgs.rustfmt
-          ];
+          buildInputs =
+            [ toolchain.rustc toolchain.cargo pkgs.rustfmt pkgs.nixfmt ];
         };
-      }
-    );
+      });
 }

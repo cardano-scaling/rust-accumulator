@@ -75,7 +75,10 @@ pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
     let m = n / 2;
 
     // Spawn parallel tasks for left and right halves
-    let (left, right) = rayon::join(|| get_coeff_from_roots(&roots[..m]), || get_coeff_from_roots(&roots[m..]));
+    let (left, right) = rayon::join(
+        || get_coeff_from_roots(&roots[..m]),
+        || get_coeff_from_roots(&roots[m..]),
+    );
 
     // Multiply the coefficients of the left and right halves
     fft_mul(&left, &right)

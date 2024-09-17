@@ -1,5 +1,6 @@
 use blstrs::{G1Projective, G2Projective, Scalar};
 use ff::{Field, PrimeField};
+use group::Group;
 use halo2_proofs::arithmetic::best_fft;
 
 /*
@@ -7,7 +8,7 @@ use halo2_proofs::arithmetic::best_fft;
     Beside this, it contains a helper function that will be used by the exported functions.
 
     The main two functions are `get_poly_commitment_g1` and `get_poly_commitment_g2`.
-    The helper function is `get_roots`, which efficiently calculates the coefficients of the polynomial
+    The helper function is `get_coeff_from_roots`, which efficiently calculates the coefficients of the polynomial
     with roots given by its input. The two main functions will use this helper function to calculate
     the polynomial commitment over a set of curve points via a MSM (multi-scalar multiplication).
 
@@ -64,7 +65,7 @@ pub fn fft_mul(left: &[Scalar], right: &[Scalar]) -> Vec<Scalar> {
     The polynomial is of the form `f(x) = (x - roots[0]) * (x - roots[1]) * ... * (x - roots[n-1])`.
     The function returns the coefficients of the polynomial in the form of a vector.
 */
-pub fn get_roots(roots: &[Scalar]) -> Vec<Scalar> {
+pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
     let n = roots.len();
 
     if n == 1 {
@@ -74,31 +75,60 @@ pub fn get_roots(roots: &[Scalar]) -> Vec<Scalar> {
     let m = n / 2;
 
     // Spawn parallel tasks for left and right halves
-    let (left, right) = rayon::join(|| get_roots(&roots[..m]), || get_roots(&roots[m..]));
+    let (left, right) = rayon::join(|| get_coeff_from_roots(&roots[..m]), || get_coeff_from_roots(&roots[m..]));
 
     // Multiply the coefficients of the left and right halves
     fft_mul(&left, &right)
 }
 
-
 #[no_mangle]
 pub extern "C" fn get_poly_commitment_g1(
-    _return_point: *mut G1Projective,
-    _scalars_ptr: *mut Scalar,
-    _scalars_len: usize,
-    _points_ptr: *mut G1Projective,
-    _points_len: usize,
+    return_point: *mut G1Projective,
+    scalars_ptr: *mut Scalar,
+    scalars_len: usize,
+    points_ptr: *mut G1Projective,
+    points_len: usize,
 ) {
-    println!("Hello from Rust G1");
+    // Safety block to handle raw pointers
+    unsafe {
+        // Create slices from the raw pointers
+        let scalars: &[Scalar] = std::slice::from_raw_parts(scalars_ptr, scalars_len);
+        let points: &[G1Projective] = std::slice::from_raw_parts(points_ptr, points_len);
+
+        // Get the roots polynomial coefficients using the provided scalars
+        let roots_poly = get_coeff_from_roots(scalars);
+
+        // Perform MSM (Multi-Scalar Multiplication) with the polynomial coefficients and points
+        let mut commitment = G1Projective::identity();
+        commitment = G1Projective::multi_exp(points, &roots_poly);
+
+        // Store the result in the return_point
+        *return_point = commitment;
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn get_poly_commitment_g2(
-    _return_point: *mut G2Projective,
-    _scalars_ptr: *mut Scalar,
-    _scalars_len: usize,
-    _points_ptr: *mut G2Projective,
-    _points_len: usize,
+    return_point: *mut G2Projective,
+    scalars_ptr: *mut Scalar,
+    scalars_len: usize,
+    points_ptr: *mut G2Projective,
+    points_len: usize,
 ) {
-    println!("Hello from Rust G2");
+    // Safety block to handle raw pointers
+    unsafe {
+        // Create slices from the raw pointers
+        let scalars: &[Scalar] = std::slice::from_raw_parts(scalars_ptr, scalars_len);
+        let points: &[G2Projective] = std::slice::from_raw_parts(points_ptr, points_len);
+
+        // Get the roots polynomial coefficients using the provided scalars
+        let roots_poly = get_coeff_from_roots(scalars);
+
+        // Perform MSM (Multi-Scalar Multiplication) with the polynomial coefficients and points
+        let mut commitment = G2Projective::identity();
+        commitment = G2Projective::multi_exp(points, &roots_poly);
+
+        // Store the result in the return_point
+        *return_point = commitment;
+    }
 }

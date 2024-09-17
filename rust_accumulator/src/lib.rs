@@ -5,12 +5,12 @@ use halo2_proofs::arithmetic::best_fft;
 
 /*
     This module contains the functions that will be exported to C.
-    Beside this, it contains a helper function that will be used by the exported functions.
+    Besides this, it contains a helper function that will be used by the exported functions.
 
     The main two functions are `get_poly_commitment_g1` and `get_poly_commitment_g2`.
     The helper function is `get_coeff_from_roots`, which efficiently calculates the coefficients of the polynomial
     with roots given by its input. The two main functions will use this helper function to calculate
-    the polynomial commitment over a set of curve points via a MSM (multi-scalar multiplication).
+    the polynomial commitment over a set of curve points via an MSM (multi-scalar multiplication).
 
 */
 
@@ -102,8 +102,7 @@ pub extern "C" fn get_poly_commitment_g1(
         let roots_poly = get_coeff_from_roots(scalars);
 
         // Perform MSM (Multi-Scalar Multiplication) with the polynomial coefficients and points
-        let mut commitment = G1Projective::identity();
-        commitment = G1Projective::multi_exp(points, &roots_poly);
+        let commitment = G1Projective::multi_exp(points, &roots_poly);
 
         // Store the result in the return_point
         *return_point = commitment;
@@ -128,8 +127,7 @@ pub extern "C" fn get_poly_commitment_g2(
         let roots_poly = get_coeff_from_roots(scalars);
 
         // Perform MSM (Multi-Scalar Multiplication) with the polynomial coefficients and points
-        let mut commitment = G2Projective::identity();
-        commitment = G2Projective::multi_exp(points, &roots_poly);
+        let commitment = G2Projective::multi_exp(points, &roots_poly);
 
         // Store the result in the return_point
         *return_point = commitment;

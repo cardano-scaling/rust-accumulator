@@ -85,7 +85,7 @@ pub fn get_roots(roots: &[Scalar]) -> Vec<Scalar> {
 pub extern "C" fn get_poly_commitment_g1(
     _return_point: *mut G1Projective,
     _scalars_ptr: *mut Scalar,
-    _len: usize,
+    _scalars_len: usize,
     _points_ptr: *mut G1Projective,
     _points_len: usize,
 ) {
@@ -96,7 +96,7 @@ pub extern "C" fn get_poly_commitment_g1(
 pub extern "C" fn get_poly_commitment_g2(
     _return_point: *mut G2Projective,
     _scalars_ptr: *mut Scalar,
-    _len: usize,
+    _scalars_len: usize,
     _points_ptr: *mut G2Projective,
     _points_len: usize,
 ) {

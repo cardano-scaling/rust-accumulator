@@ -1,6 +1,5 @@
 use blstrs::{G1Projective, G2Projective, Scalar};
 use ff::{Field, PrimeField};
-use group::Group;
 use halo2_proofs::arithmetic::best_fft;
 
 /*

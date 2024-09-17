@@ -31,7 +31,7 @@
         cargoProject = naersk'.buildPackage {
           src = ./rust_accumulator;
           release = true;
-          nativeBuildInputs = [ ];
+          nativeBuildInputs = [ pkgs.m4 ];
           # Explicitly define the interface for the C library
           installPhase = ''
             mkdir -p $out/lib

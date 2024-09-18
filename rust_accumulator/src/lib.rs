@@ -1,5 +1,7 @@
-use blstrs::{G1Projective, G2Projective, Scalar};
+use blstrs::{pairing, G1Affine, G1Projective, G2Affine, G2Projective, Scalar};
 use ff::{Field, PrimeField};
+use group::prime::PrimeCurveAffine;
+use group::Group;
 use halo2_proofs::arithmetic::best_fft;
 
 /*
@@ -73,7 +75,7 @@ pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
 
     let m = n / 2;
 
-    // Spawn parallel tasks for left and right halves
+    // Spawn parallel tasks for left and right halves (divide and conquer)
     let (left, right) = rayon::join(
         || get_coeff_from_roots(&roots[..m]),
         || get_coeff_from_roots(&roots[m..]),
@@ -86,9 +88,9 @@ pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
 #[no_mangle]
 pub extern "C" fn get_poly_commitment_g1(
     return_point: *mut G1Projective,
-    scalars_ptr: *mut Scalar,
+    scalars_ptr: *const Scalar,
     scalars_len: usize,
-    points_ptr: *mut G1Projective,
+    points_ptr: *const G1Projective,
     points_len: usize,
 ) {
     // Safety block to handle raw pointers
@@ -111,9 +113,9 @@ pub extern "C" fn get_poly_commitment_g1(
 #[no_mangle]
 pub extern "C" fn get_poly_commitment_g2(
     return_point: *mut G2Projective,
-    scalars_ptr: *mut Scalar,
+    scalars_ptr: *const Scalar,
     scalars_len: usize,
-    points_ptr: *mut G2Projective,
+    points_ptr: *const G2Projective,
     points_len: usize,
 ) {
     // Safety block to handle raw pointers
@@ -130,5 +132,93 @@ pub extern "C" fn get_poly_commitment_g2(
 
         // Store the result in the return_point
         *return_point = commitment;
+    }
+}
+
+#[cfg(test)]
+mod test_get_poly_commitments {
+    use super::*;
+    // in this test we will calculate the polynomial commitment a = g1^f(tau) and b = g2^f(tau)
+    // of the polynomial f = (x + 1)^5. Then do the pairing check
+    //       e(a,g2) = e(g1,b)
+    // where e is the bilinear pairing
+
+    #[test]
+    fn test_get_coeff_from_roots() {
+        const N: usize = 5;
+        // This represents the roots of the polynomial (x + 1)^5 = x^5 + 5x^4 + 10x^3 + 10x^2 + 5x + 1
+        // which is a polynomial of degree 5 (so it has 6 coefficients)
+        let roots = vec![
+            Scalar::ONE,
+            Scalar::ONE,
+            Scalar::ONE,
+            Scalar::ONE,
+            Scalar::ONE,
+        ];
+        // Set a value of tau for a trusted setup
+        let scalar_tau = Scalar::from_bytes_be(&{
+            let mut bytes = [0u8; 32];
+            bytes[31] = 10;
+            bytes
+        })
+        .unwrap();
+
+        // Initialize a vector with the "zero't" power of tau (tau^0 = 1)
+        let mut scalar_power_of_tau: Vec<Scalar> = vec![Scalar::ONE];
+
+        // Add the powers of tau to the vector if size N+1 (to fit the polynomial coefficients)
+        scalar_power_of_tau.extend((0..N).scan(Scalar::ONE, |state, _| {
+            // Multiply by tau to get the next power
+            *state = *state * scalar_tau;
+            // Return the new power of tau
+            Some(*state)
+        }));
+
+        // Compute the powers of tau over G1
+        let g1_setup: Vec<G1Projective> = scalar_power_of_tau
+            .iter()
+            .map(|x| G1Projective::generator() * x)
+            .collect();
+        // Compute the powers of tau over G2
+        let g2_setup: Vec<G2Projective> = scalar_power_of_tau
+            .iter()
+            .map(|x| G2Projective::generator() * x)
+            .collect();
+
+        // setup a commitment
+        let mut g1_commitment = G1Projective::identity();
+        let mut g2_commitment = G2Projective::identity();
+
+        // calculate the commitment using the main function for G1
+        get_poly_commitment_g1(
+            &mut g1_commitment,
+            roots.as_ptr(),
+            roots.len(),
+            g1_setup.as_ptr(),
+            g1_setup.len(),
+        );
+
+        // calculate the commitment using the main function for G2
+        get_poly_commitment_g2(
+            &mut g2_commitment,
+            roots.as_ptr(),
+            roots.len(),
+            g2_setup.as_ptr(),
+            g2_setup.len(),
+        );
+
+        // Perform pairing check
+        let g1_affine = G1Affine::from(g1_commitment);
+        let g2_affine = G2Affine::from(g2_commitment);
+        let g1_gen_affine = G1Affine::generator();
+        let g2_gen_affine = G2Affine::generator();
+
+        let pairing_a_g2 = pairing(&g1_affine, &g2_gen_affine); // e(a, g2)
+        let pairing_g1_b = pairing(&g1_gen_affine, &g2_affine); // e(g1, b)
+
+        // Check that the pairings are equal
+        assert_eq!(pairing_a_g2, pairing_g1_b, "Pairing check failed!");
+
+        println!("Pairing check passed!");
     }
 }

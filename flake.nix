@@ -56,7 +56,7 @@
               blst_p1_affine inner;
             } G1Affine;
 
-            // Define the G2Projective structure as it is in Rust
+            // Define the G2Affine structure as it is in Rust
             typedef struct {
               blst_p2_affine inner;
             } G2Affine;

@@ -97,7 +97,9 @@ pub extern "C" fn get_poly_commitment_g1(
     unsafe {
         // Create slices from the raw pointers
         let scalars: &[Scalar] = std::slice::from_raw_parts(scalars_ptr, scalars_len);
+        println!("scalars: {:?}", scalars);
         let points: &[G1Projective] = std::slice::from_raw_parts(points_ptr, points_len);
+        println!("points: {:?}", points);
 
         // Get the roots polynomial coefficients using the provided scalars
         let roots_poly = get_coeff_from_roots(scalars);

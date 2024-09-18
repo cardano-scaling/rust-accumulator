@@ -87,17 +87,18 @@ pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
 
 #[no_mangle]
 pub extern "C" fn get_poly_commitment_g1(
-    return_point: *mut G1Projective,
+    return_point: *mut G1Affine,
     scalars_ptr: *const Scalar,
     scalars_len: usize,
-    points_ptr: *const G1Projective,
+    points_ptr: *const G1Affine,
     points_len: usize,
 ) {
     // Safety block to handle raw pointers
     unsafe {
         // Create slices from the raw pointers
         let scalars: &[Scalar] = std::slice::from_raw_parts(scalars_ptr, scalars_len);
-        let points: &[G1Projective] = std::slice::from_raw_parts(points_ptr, points_len);
+        let points_affine: &[G1Affine] = std::slice::from_raw_parts(points_ptr, points_len);
+        let points: &[G1Projective] = &points_affine.iter().map(|x| x.into()).collect::<Vec<_>>();
 
         // Get the roots polynomial coefficients using the provided scalars
         let roots_poly = get_coeff_from_roots(scalars);
@@ -106,23 +107,24 @@ pub extern "C" fn get_poly_commitment_g1(
         let commitment = G1Projective::multi_exp(points, &roots_poly);
 
         // Store the result in the return_point
-        *return_point = commitment;
+        *return_point = G1Affine::from(commitment);
     }
 }
 
 #[no_mangle]
 pub extern "C" fn get_poly_commitment_g2(
-    return_point: *mut G2Projective,
+    return_point: *mut G2Affine,
     scalars_ptr: *const Scalar,
     scalars_len: usize,
-    points_ptr: *const G2Projective,
+    points_ptr: *const G2Affine,
     points_len: usize,
 ) {
     // Safety block to handle raw pointers
     unsafe {
         // Create slices from the raw pointers
         let scalars: &[Scalar] = std::slice::from_raw_parts(scalars_ptr, scalars_len);
-        let points: &[G2Projective] = std::slice::from_raw_parts(points_ptr, points_len);
+        let points_affine: &[G2Affine] = std::slice::from_raw_parts(points_ptr, points_len);
+        let points = &points_affine.iter().map(|x| x.into()).collect::<Vec<_>>();
 
         // Get the roots polynomial coefficients using the provided scalars
         let roots_poly = get_coeff_from_roots(scalars);
@@ -131,7 +133,7 @@ pub extern "C" fn get_poly_commitment_g2(
         let commitment = G2Projective::multi_exp(points, &roots_poly);
 
         // Store the result in the return_point
-        *return_point = commitment;
+        *return_point = G2Affine::from(commitment);
     }
 }
 
@@ -179,23 +181,25 @@ mod test_get_poly_commitments {
             .iter()
             .map(|x| G1Projective::generator() * x)
             .collect();
+        let g1_setup_affine: Vec<G1Affine> = g1_setup.iter().map(|x| G1Affine::from(*x)).collect();
         // Compute the powers of tau over G2
         let g2_setup: Vec<G2Projective> = scalar_power_of_tau
             .iter()
             .map(|x| G2Projective::generator() * x)
             .collect();
+        let g2_setup_affine: Vec<G2Affine> = g2_setup.iter().map(|x| G2Affine::from(*x)).collect();
 
         // setup a commitment
-        let mut g1_commitment = G1Projective::identity();
-        let mut g2_commitment = G2Projective::identity();
+        let mut g1_commitment = G1Affine::identity();
+        let mut g2_commitment = G2Affine::identity();
 
         // calculate the commitment using the main function for G1
         get_poly_commitment_g1(
             &mut g1_commitment,
             roots.as_ptr(),
             roots.len(),
-            g1_setup.as_ptr(),
-            g1_setup.len(),
+            g1_setup_affine.as_ptr(),
+            g1_setup_affine.len(),
         );
 
         // calculate the commitment using the main function for G2
@@ -203,18 +207,16 @@ mod test_get_poly_commitments {
             &mut g2_commitment,
             roots.as_ptr(),
             roots.len(),
-            g2_setup.as_ptr(),
-            g2_setup.len(),
+            g2_setup_affine.as_ptr(),
+            g2_setup_affine.len(),
         );
 
         // Perform pairing check
-        let g1_affine = G1Affine::from(g1_commitment);
-        let g2_affine = G2Affine::from(g2_commitment);
         let g1_gen_affine = G1Affine::generator();
         let g2_gen_affine = G2Affine::generator();
 
-        let pairing_a_g2 = pairing(&g1_affine, &g2_gen_affine); // e(a, g2)
-        let pairing_g1_b = pairing(&g1_gen_affine, &g2_affine); // e(g1, b)
+        let pairing_a_g2 = pairing(&g1_commitment, &g2_gen_affine); // e(a, g2)
+        let pairing_g1_b = pairing(&g1_gen_affine, &g2_commitment); // e(g1, b)
 
         // Check that the pairings are equal
         assert_eq!(pairing_a_g2, pairing_g1_b, "Pairing check failed!");

@@ -136,12 +136,133 @@ pub extern "C" fn get_poly_commitment_g2(
 }
 
 #[cfg(test)]
-mod test_get_poly_commitments {
+mod tests {
     use super::*;
-    // in this test we will calculate the polynomial commitment a = g1^f(tau) and b = g2^f(tau)
-    // of the polynomial f = (x + 1)^5. Then do the pairing check
-    //       e(a,g2) = e(g1,b)
-    // where e is the bilinear pairing
+    use proptest::prelude::*;
+
+    /// Helper function: Schoolbook multiplication of two polynomials
+    fn direct_mul(left: &[Scalar], right: &[Scalar]) -> Vec<Scalar> {
+        let mut result = vec![Scalar::ZERO; left.len() + right.len() - 1];
+
+        for (i, l) in left.iter().enumerate() {
+            for (j, r) in right.iter().enumerate() {
+                result[i + j] += *l * *r;
+            }
+        }
+
+        result
+    }
+
+    // Strategy for generating random `Scalar`s
+    fn random_scalar() -> impl Strategy<Value = Scalar> {
+        any::<[u8; 32]>().prop_map(|b| {
+            Scalar::from_bytes_be(&b).unwrap_or(Scalar::ZERO) // Fallback to zero on failure
+        })
+    }
+
+    // Strategy for generating zero-filled `Scalar` vectors
+    fn zero_scalar() -> impl Strategy<Value = Scalar> {
+        Just(Scalar::ZERO)
+    }
+
+    // Test: Single coefficient polynomials
+    proptest! {
+        #[test]
+        fn test_fft_mul_single_coeff_polys(left in random_scalar(), right in random_scalar()) {
+            let fft_result = fft_mul(&[left], &[right]);
+            let expected = vec![left * right];
+            prop_assert_eq!(fft_result, expected, "Failed on single coefficient polynomials");
+        }
+    }
+
+    // Test: Polynomials with different lengths
+    proptest! {
+        #[test]
+        fn test_fft_mul_diff_lengths(left in prop::collection::vec(random_scalar(), 1..10),
+                                     right in prop::collection::vec(random_scalar(), 1..5)) {
+            // Perform FFT-based multiplication on the two polynomials
+            let fft_result = fft_mul(&left, &right);
+
+            // Perform direct (schoolbook) multiplication on the same polynomials
+            let direct_result = direct_mul(&left, &right);
+
+            // Expected length of the result
+            let expected_len = left.len() + right.len() - 1;
+
+            // Ensure the length is correct
+            prop_assert_eq!(fft_result.len(), expected_len, "Failed on mismatched polynomial lengths");
+
+            // Ensure the content is correct by comparing FFT result with direct multiplication result
+            prop_assert_eq!(fft_result, direct_result, "Failed on mismatched polynomials with different lengths: content mismatch");
+        }
+    }
+
+    // Test: Empty polynomials
+    proptest! {
+        #[test]
+        fn test_fft_mul_empty_polys(
+            non_empty_vec in prop::collection::vec(random_scalar(), 1..100) // Non-empty
+        ) {
+            // Case 1: left = empty, right = non-empty
+            let fft_result = fft_mul(&[], &non_empty_vec);
+            let expected = vec![Scalar::ZERO; non_empty_vec.len()]; // Expected result is a zero-filled vector of length right
+            prop_assert_eq!(fft_result, expected, "Failed on case left = empty, right = non-empty with right.len() = {}", non_empty_vec.len());
+
+            // Case 2: left = non-empty, right = empty
+            let fft_result = fft_mul(&non_empty_vec, &[]);
+            let expected = vec![Scalar::ZERO; non_empty_vec.len()]; // Expected result is a zero-filled vector of length left
+            prop_assert_eq!(fft_result, expected, "Failed on case left = non-empty, right = empty with left.len() = {}", non_empty_vec.len());
+
+            // Case 3: left = empty, right = empty
+            let fft_result = fft_mul(&[], &[]);
+            let expected = Vec::<Scalar>::new(); // Expected result is an empty vector
+            prop_assert_eq!(fft_result, expected, "Failed on case left = empty, right = empty");
+        }
+    }
+
+    // Test: Zero and Non-zero polynomials with varying sizes
+    proptest! {
+        #[test]
+        fn test_fft_mul_zero_nonzero_cases(
+            // Randomly generate zero-filled and non-zero polynomials of varying lengths
+            left_nonzero in prop::collection::vec(random_scalar(), 1..100),
+            right_nonzero in prop::collection::vec(random_scalar(), 1..100),
+            left_zero in prop::collection::vec(zero_scalar(), 1..100),
+            right_zero in prop::collection::vec(zero_scalar(), 1..100)
+        ) {
+            // Case 1: left = 0 (zero vector), right = non-zero
+            let fft_result = fft_mul(&left_zero, &right_nonzero);
+            let expected = vec![Scalar::ZERO; left_zero.len() + right_nonzero.len() - 1];
+            prop_assert_eq!(fft_result, expected, "Failed on case left = 0, right = non-zero with left.len() = {} and right.len() = {}", left_zero.len(), right_nonzero.len());
+
+            // Case 2: left = non-zero, right = 0 (zero polynomial)
+            let fft_result = fft_mul(&left_nonzero, &right_zero);
+            let expected = vec![Scalar::ZERO; left_nonzero.len() + right_zero.len() - 1];
+            prop_assert_eq!(fft_result, expected, "Failed on case left = non-zero, right = 0 with left.len() = {} and right.len() = {}", left_nonzero.len(), right_zero.len());
+
+            // Case 3: left = 0, right = 0 (both polynomials are zero)
+            let fft_result = fft_mul(&left_zero, &right_zero);
+            let expected = vec![Scalar::ZERO; left_zero.len() + right_zero.len() - 1];
+            prop_assert_eq!(fft_result, expected, "Failed on case left = 0, right = 0 with left.len() = {} and right.len() = {}", left_zero.len(), right_zero.len());
+        }
+    }
+
+    // Test: Polynomial multiplication with random inputs and large sizes
+    proptest! {
+        #[test]
+        fn test_fft_mul_large_polys(left in prop::collection::vec(random_scalar(), 500..700),
+                                    right in prop::collection::vec(random_scalar(), 500..700)) {
+
+            // Perform FFT-based multiplication
+            let fft_result = fft_mul(&left, &right);
+
+            // Perform direct multiplication
+            let direct_result = direct_mul(&left, &right);
+
+            // Ensure the results match
+            prop_assert_eq!(fft_result, direct_result, "Failed on random polynomial multiplication");
+        }
+    }
 
     #[test]
     fn test_get_coeff_from_roots() {
@@ -161,7 +282,7 @@ mod test_get_poly_commitments {
             bytes[31] = 10;
             bytes
         })
-        .unwrap();
+            .unwrap();
 
         // Initialize a vector with the "zero't" power of tau (tau^0 = 1)
         let mut scalar_power_of_tau: Vec<Scalar> = vec![Scalar::ONE];

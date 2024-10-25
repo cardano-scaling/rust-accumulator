@@ -91,6 +91,10 @@
             mkdir -p $out/include
             cp $src/include/rust_accumulator.h $out/include/
 
+            if [ -f $out/lib/librust_accumulator.dylib ]; then
+              install_name_tool -id $out/lib/librust_accumulator.dylib $out/lib/librust_accumulator.dylib
+            fi
+
             # Adding pkg-config support
             mkdir -p $out/lib/pkgconfig
             cat <<EOF > $out/lib/pkgconfig/librust_accumulator.pc

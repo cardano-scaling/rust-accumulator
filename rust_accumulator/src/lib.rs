@@ -69,6 +69,10 @@ pub fn fft_mul(left: &[Scalar], right: &[Scalar]) -> Vec<Scalar> {
 pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
     let n = roots.len();
 
+    if n == 0 {
+        return vec![Scalar::ONE];
+    }
+
     if n == 1 {
         return vec![roots[0], Scalar::ONE];
     }

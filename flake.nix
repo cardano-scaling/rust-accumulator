@@ -36,10 +36,7 @@
           installPhase = ''
             mkdir -p $out/lib
 
-            cp target/release/lib*.so $out/lib/ || true
-            cp target/release/lib*.dylib $out/lib/ || true
-            cp target/release/lib*.dll $out/lib/ || true
-
+            cp target/release/lib*.a $out/lib/ || true
 
             mkdir -p $out/include
             cat > $out/include/rust_accumulator.h <<'EOF'
@@ -79,21 +76,9 @@
 
           installPhase = ''
             mkdir -p $out/lib
-            if [ -f $src/lib/librust_accumulator.so ]; then
-              cp $src/lib/librust_accumulator.so $out/lib/
-            fi
-            if [ -f $src/lib/librust_accumulator.dylib ]; then
-              cp $src/lib/librust_accumulator.dylib $out/lib/
-            fi
-            if [ -f $src/lib/librust_accumulator.dll ]; then
-              cp $src/lib/librust_accumulator.dll $out/lib/
-            fi
+            cp $src/lib/librust_accumulator.a $out/lib/
             mkdir -p $out/include
             cp $src/include/rust_accumulator.h $out/include/
-
-            if [ -f $out/lib/librust_accumulator.dylib ]; then
-              install_name_tool -id $out/lib/librust_accumulator.dylib $out/lib/librust_accumulator.dylib
-            fi
 
             # Adding pkg-config support
             mkdir -p $out/lib/pkgconfig

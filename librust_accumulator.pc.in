@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: librust_accumulator
+Description: A rust based lib for a PCS based accumulator
+Version: @VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lrust_accumulator

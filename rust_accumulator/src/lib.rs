@@ -1,7 +1,5 @@
-use blstrs::{pairing, G1Affine, G1Projective, G2Affine, G2Projective, Scalar};
+use blstrs::{G1Projective, G2Projective, Scalar};
 use ff::{Field, PrimeField};
-use group::prime::PrimeCurveAffine;
-use group::Group;
 use halo2_proofs::arithmetic::best_fft;
 
 /*

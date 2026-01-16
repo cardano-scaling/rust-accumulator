@@ -5,7 +5,7 @@ edition = "2018"
 
 [lib]
 name = "rust_accumulator"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 blstrs = "0.7.1" 

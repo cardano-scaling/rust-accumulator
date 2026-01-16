@@ -1,45 +1,53 @@
 {
-  description = "A simple flake for building this Rust li";
-
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    fenix.url = "github:nix-community/fenix";
     flake-utils.url = "github:numtide/flake-utils";
+    naersk.url = "github:nix-community/naersk";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
-  outputs = { self, nixpkgs, naersk, fenix, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-
-        toolchain = with fenix.packages.${system}; {
-          rustc = stable.rustc;
-          cargo = stable.cargo;
-          cbindgen = pkgs.rust-cbindgen;
+  outputs = { self, fenix, flake-utils, naersk, nixpkgs }:
+    flake-utils.lib.eachDefaultSystem (
+      system: let
+        pkgs = (import nixpkgs) {
+          inherit system;
         };
 
-        naersk' = pkgs.callPackage naersk { };
+        toolchain = with fenix.packages.${system};
+          combine [
+            minimal.rustc
+            minimal.cargo
+            targets.x86_64-unknown-linux-musl.latest.rust-std
+          ];
 
-        # Build the Rust library via naersk
-        cargoProject = naersk'.buildPackage {
+        naersk' = naersk.lib.${system}.override {
+          cargo = toolchain;
+          rustc = toolchain;
+        };
+
+      in rec {
+        defaultPackage = naersk'.buildPackage {
           src = ./rust_accumulator;
-          release = true;
-          nativeBuildInputs = [ pkgs.m4 ];
-          # Explicitly define the interface for the C library
-          installPhase = ''
-            mkdir -p $out/lib
+          doCheck = false;
+          copyLibs = true;
+          nativeBuildInputs = with pkgs; [ pkgsStatic.stdenv.cc ];
 
-            cp target/release/lib*.so $out/lib/ || true
-            cp target/release/lib*.dylib $out/lib/ || true
-            cp target/release/lib*.dll $out/lib/ || true
+          # Tells Cargo that we're building for musl.
+          # (https://doc.rust-lang.org/cargo/reference/config.html#buildtarget)
+          CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
 
+          # Tells Cargo to enable static compilation.
+          # (https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags)
+          #
+          # Note that the resulting binary might still be considered dynamically
+          # linked by ldd, but that's just because the binary might have
+          # position-independent-execution enabled.
+          # (see: https://github.com/rust-lang/rust/issues/79624#issuecomment-737415388)
+          CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+          postInstall = ''
+            mkdir -p $out/lib/pkgconfig
+
+            version=$(grep '^version = "[^"]*"' Cargo.toml | cut -d '"' -f2 | head -n1)
 
             mkdir -p $out/include
             cat > $out/include/rust_accumulator.h <<'EOF'
@@ -66,59 +74,20 @@
             void get_poly_commitment_g2(G2Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G2Projective *points_ptr, size_t points_len);
 
             EOF
-          '';
-        };
 
-        # This derivation is the C version of the library that can be imported via Haskell.nix
-        cLibrary = pkgs.stdenv.mkDerivation {
-          name = "librust_accumulator";
-          version = "1.0";
-          src = cargoProject;
-
-          buildInputs = [ pkgs.pkg-config ];
-
-          installPhase = ''
-            mkdir -p $out/lib
-            if [ -f $src/lib/librust_accumulator.so ]; then
-              cp $src/lib/librust_accumulator.so $out/lib/
-            fi
-            if [ -f $src/lib/librust_accumulator.dylib ]; then
-              cp $src/lib/librust_accumulator.dylib $out/lib/
-            fi
-            if [ -f $src/lib/librust_accumulator.dll ]; then
-              cp $src/lib/librust_accumulator.dll $out/lib/
-            fi
-            mkdir -p $out/include
-            cp $src/include/rust_accumulator.h $out/include/
-
-            if [ -f $out/lib/librust_accumulator.dylib ]; then
-              install_name_tool -id $out/lib/librust_accumulator.dylib $out/lib/librust_accumulator.dylib
-            fi
-
-            # Adding pkg-config support
-            mkdir -p $out/lib/pkgconfig
-            cat <<EOF > $out/lib/pkgconfig/librust_accumulator.pc
+            cat > $out/lib/pkgconfig/librust_accumulator.pc <<EOF
             prefix=$out
-            exec_prefix=\''${prefix}
-            libdir=\''${exec_prefix}/lib
+            libdir=\''${prefix}/lib
             includedir=\''${prefix}/include
 
             Name: librust_accumulator
-            Description: A rust based lib for a PCS based accumulator
-            Version: 1.0
-
-            Cflags: -I\''${includedir}
+            Description: Rust Accumulator Library
+            Version: ''${version:-0.1.0}
             Libs: -L\''${libdir} -lrust_accumulator
+            Cflags: -I\''${includedir}
             EOF
           '';
         };
-
-      in rec {
-        defaultPackage = cLibrary;
-
-        devShell = pkgs.mkShell {
-          buildInputs =
-            [ toolchain.rustc toolchain.cargo pkgs.rustfmt pkgs.nixfmt ];
-        };
-      });
+      }
+    );
 }

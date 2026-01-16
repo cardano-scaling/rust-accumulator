@@ -1,109 +1,98 @@
 {
-  description = "A simple flake for building this Rust li";
-
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    fenix.url = "github:nix-community/fenix";
     flake-utils.url = "github:numtide/flake-utils";
+    naersk.url = "github:nix-community/naersk";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
-  outputs = { self, nixpkgs, naersk, fenix, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
+outputs = { self, fenix, flake-utils, naersk, nixpkgs }:
+    flake-utils.lib.eachDefaultSystem (
+      system: let
+        pkgs = (import nixpkgs) {
+          inherit system;
+        };    isLinux = pkgs.stdenv.isLinux;
 
-        toolchain = with fenix.packages.${system}; {
-          rustc = stable.rustc;
-          cargo = stable.cargo;
-          cbindgen = pkgs.rust-cbindgen;
-        };
+    rustTarget = if isLinux
+      then "${pkgs.stdenv.hostPlatform.parsed.cpu.name}-unknown-linux-musl"
+      else "${pkgs.stdenv.hostPlatform.parsed.cpu.name}-apple-darwin";
 
-        naersk' = pkgs.callPackage naersk { };
+    toolchain = with fenix.packages.${system};
+      combine [
+        minimal.rustc
+        minimal.cargo
+        targets.${rustTarget}.latest.rust-std
+      ];
 
-        # Build the Rust library via naersk
-        cargoProject = naersk'.buildPackage {
-          src = ./rust_accumulator;
-          release = true;
-          nativeBuildInputs = [ pkgs.m4 ];
-          # Explicitly define the interface for the C library
-          installPhase = ''
-            mkdir -p $out/lib
+    naersk' = naersk.lib.${system}.override {
+      cargo = toolchain;
+      rustc = toolchain;
+    };
 
-            cp target/release/lib*.a $out/lib/ || true
+  in rec {
+    defaultPackage = naersk'.buildPackage {
+      src = ./rust_accumulator;
+      doCheck = false;
+      copyLibs = true;
+      nativeBuildInputs = if isLinux then with pkgs; [ pkgsStatic.stdenv.cc ] else [ ];
+      stdenv = if isLinux then pkgs.pkgsStatic.stdenv else pkgs.stdenv;
 
-            mkdir -p $out/include
-            cat > $out/include/rust_accumulator.h <<'EOF'
-            #include "blst.h"
-            #include <stddef.h>
+      # Tells Cargo that we're building for musl.
+      # (https://doc.rust-lang.org/cargo/reference/config.html#buildtarget)
+      CARGO_BUILD_TARGET = rustTarget;
 
-            // Define the Scalar structure as it is in Rust
-            typedef struct {
-              blst_fr inner;
-            } Scalar;
+      # Tells Cargo to enable static compilation.
+      # (https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags)
+      #
+      # Note that the resulting binary might still be considered dynamically
+      # linked by ldd, but that's just because the binary might have
+      # position-independent-execution enabled.
+      # (see: https://github.com/rust-lang/rust/issues/79624#issuecomment-737415388)
+      CARGO_BUILD_RUSTFLAGS = if isLinux then "-C target-feature=+crt-static" else "";
+      postInstall = ''
+        mkdir -p $out/lib/pkgconfig
 
-            // Define the G1Projective structure as it is in Rust
-            typedef struct {
-              blst_p1 inner;
-            } G1Projective;
+        version=$(grep '^version = "[^"]*"' Cargo.toml | cut -d '"' -f2 | head -n1)
 
-            // Define the G2Projective structure as it is in Rust
-            typedef struct {
-              blst_p2 inner;
-            } G2Projective;
+        mkdir -p $out/include
+        cat > $out/include/rust_accumulator.h <<'EOF'
+        #include "blst.h"
+        #include <stddef.h>
 
-            void get_poly_commitment_g1(G1Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G1Projective *points_ptr, size_t points_len);
+        // Define the Scalar structure as it is in Rust
+        typedef struct {
+          blst_fr inner;
+        } Scalar;
 
-            void get_poly_commitment_g2(G2Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G2Projective *points_ptr, size_t points_len);
+        // Define the G1Projective structure as it is in Rust
+        typedef struct {
+          blst_p1 inner;
+        } G1Projective;
 
-            EOF
-          '';
-        };
+        // Define the G2Projective structure as it is in Rust
+        typedef struct {
+          blst_p2 inner;
+        } G2Projective;
 
-        # This derivation is the C version of the library that can be imported via Haskell.nix
-        cLibrary = pkgs.stdenv.mkDerivation {
-          name = "librust_accumulator";
-          version = "1.0";
-          src = cargoProject;
+        void get_poly_commitment_g1(G1Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G1Projective *points_ptr, size_t points_len);
 
-          buildInputs = [ pkgs.pkg-config ];
+        void get_poly_commitment_g2(G2Projective *return_point, Scalar *scalars_ptr, size_t scalars_len, G2Projective *points_ptr, size_t points_len);
 
-          installPhase = ''
-            mkdir -p $out/lib
-            cp $src/lib/librust_accumulator.a $out/lib/
-            mkdir -p $out/include
-            cp $src/include/rust_accumulator.h $out/include/
+        EOF
 
-            # Adding pkg-config support
-            mkdir -p $out/lib/pkgconfig
-            cat <<EOF > $out/lib/pkgconfig/librust_accumulator.pc
-            prefix=$out
-            exec_prefix=\''${prefix}
-            libdir=\''${exec_prefix}/lib
-            includedir=\''${prefix}/include
+        cat > $out/lib/pkgconfig/librust_accumulator.pc <<EOF
+        prefix=$out
+        libdir=\''${prefix}/lib
+        includedir=\''${prefix}/include
 
-            Name: librust_accumulator
-            Description: A rust based lib for a PCS based accumulator
-            Version: 1.0
-
-            Cflags: -I\''${includedir}
-            Libs: -L\''${libdir} -lrust_accumulator
-            EOF
-          '';
-        };
-
-      in rec {
-        defaultPackage = cLibrary;
-
-        devShell = pkgs.mkShell {
-          buildInputs =
-            [ toolchain.rustc toolchain.cargo pkgs.rustfmt pkgs.nixfmt ];
-        };
-      });
+        Name: librust_accumulator
+        Description: Rust Accumulator Library
+        Version: ''${version:-0.1.0}
+        Libs: -L\''${libdir} -lrust_accumulator
+        Cflags: -I\''${includedir}
+        EOF
+      '';
+    };
+  }
+);
 }

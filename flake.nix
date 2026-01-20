@@ -3,7 +3,7 @@
     fenix.url = "github:nix-community/fenix";
     flake-utils.url = "github:numtide/flake-utils";
     naersk.url = "github:nix-community/naersk";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
   };
 
   outputs = { self, fenix, flake-utils, naersk, nixpkgs }:

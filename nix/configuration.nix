@@ -5,7 +5,6 @@
         combine [
           minimal.rustc
           minimal.cargo
-          targets.x86_64-unknown-linux-musl.latest.rust-std
         ];
 
       naersk' = inputs.naersk.lib.${system}.override {
@@ -13,20 +12,13 @@
         rustc = toolchain;
       };
 
-      # Conditional stdenv: cross on darwin/non-x86 linux, native musl on x86_64-linux
-      targetStdenv = if pkgs.stdenv.isDarwin || pkgs.stdenv.isAarch64
-        then pkgs.pkgsCross.musl64.stdenv
-        else pkgs.pkgsMusl.stdenv;
 
     in rec {
       packages.default = naersk'.buildPackage {
         src = lib.cleanSource "${self}/rust_accumulator";
-        stdenv = targetStdenv;
+        stdenv = pkgs.stdenv;
         doCheck = false;
         copyLibs = true;
-
-        CARGO_BUILD_TARGET = if pkgs.stdenv.isDarwin then null else "x86_64-unknown-linux-musl";
-        CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
 
         postInstall = ''
           mkdir -p $out/lib/pkgconfig

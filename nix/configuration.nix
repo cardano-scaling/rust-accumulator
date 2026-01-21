@@ -12,6 +12,8 @@
         rustc = toolchain;
       };
 
+      cargoToml = builtins.fromTOML (builtins.readFile "${self}/rust_accumulator/Cargo.toml");
+      version = cargoToml.package.version or "0.1.0";
 
     in rec {
       packages.default = naersk'.buildPackage {
@@ -22,8 +24,6 @@
 
         postInstall = ''
           mkdir -p $out/lib/pkgconfig
-
-          version=$(grep '^version = "[^"]*"' Cargo.toml | cut -d '"' -f2 | head -n1)
 
           cp "${self}/include" $out/ -r
 

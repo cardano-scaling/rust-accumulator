@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "bend": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792066128,
+        "narHash": "sha256-+/D0c33xs//Dn/EzZLyiY+F8sL3heqdWwwzj9Bxp3LY=",
+        "owner": "bendlang",
+        "repo": "bend",
+        "rev": "252752c9d86c61a42ad0463261b3475f591c261e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bendlang",
+        "repo": "bend",
+        "type": "github"
+      }
+    },
     "fenix": {
       "inputs": {
         "nixpkgs": "nixpkgs",
@@ -124,6 +144,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-proof": {
+      "locked": {
+        "lastModified": 1791956154,
+        "narHash": "sha256-jBYGPi4udQ9uo4KQp9m2J0546nJVQitG15gvZSaVVAs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "55bfb4d7437bd4e09ab7cba58a43bd68eb310044",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "55bfb4d7437bd4e09ab7cba58a43bd68eb310044",
+        "type": "github"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1752077645,
@@ -158,11 +194,13 @@
     },
     "root": {
       "inputs": {
+        "bend": "bend",
         "fenix": "fenix",
         "flake-parts": "flake-parts",
         "import-tree": "import-tree",
         "naersk": "naersk",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_3",
+        "nixpkgs-proof": "nixpkgs-proof"
       }
     },
     "rust-analyzer-src": {

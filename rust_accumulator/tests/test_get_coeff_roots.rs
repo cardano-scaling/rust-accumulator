@@ -1,149 +1,88 @@
-use rand::thread_rng;
-// tests/test_get_coeff_roots.rs
-use ff::{Field, PrimeField};
-use rust_accumulator::*;
+use blstrs::{pairing, G1Affine, G1Projective, G2Affine, G2Projective, Scalar};
+use ff::Field;
+use group::{prime::PrimeCurveAffine, Group};
+use rand::{rngs::StdRng, SeedableRng};
+use rust_accumulator::{get_coeff_from_roots, get_poly_commitment_g1, get_poly_commitment_g2};
 
-use blstrs::Scalar;
-
-use flint_sys::fmpz::{
-    fmpz, fmpz_clear, fmpz_get_str, fmpz_get_ui_array, fmpz_set_str, fmpz_set_ui_array,
-};
-use flint_sys::fmpz_mod_poly::fmpz_mod_poly_product_roots_fmpz_vec;
-use flint_sys::fmpz_poly::{
-    fmpz_poly_clear, fmpz_poly_get_coeff_fmpz, fmpz_poly_init, fmpz_poly_length, fmpz_poly_t,
-};
-use std::ffi::{CStr, CString};
-use std::ops::Neg;
-use std::ptr;
-
-#[derive(Clone, Debug)]
-pub struct Fmpz {
-    pub value: fmpz,
-}
-
-impl Fmpz {
-    pub fn to_string(&self, base: i32) -> String {
-        unsafe {
-            let cstr_ptr = fmpz_get_str(ptr::null_mut(), base, &self.value);
-            let cstr = CStr::from_ptr(cstr_ptr);
-            let rust_str = cstr.to_str().unwrap().to_string();
-            libc::free(cstr_ptr as *mut libc::c_void);
-            rust_str
+// Independent quadratic oracle: insert each (x + input) into an ascending
+// coefficient array. This replaces the unavailable FLINT test dependency.
+fn reference(inputs: &[Scalar]) -> Vec<Scalar> {
+    let mut coefficients = vec![Scalar::ONE];
+    for input in inputs {
+        coefficients.push(Scalar::ZERO);
+        for i in (1..coefficients.len()).rev() {
+            coefficients[i] = coefficients[i] * input + coefficients[i - 1];
         }
+        coefficients[0] *= input;
     }
-
-    pub fn from_string(string: String) -> Self {
-        let mut value: fmpz = fmpz::default();
-        let c_string = CString::new(string).unwrap();
-        unsafe {
-            fmpz_set_str(&mut value as *mut fmpz, c_string.as_ptr(), 16);
-        }
-        Fmpz { value }
-    }
-
-    pub fn from_scalar(scalar: Scalar) -> Self {
-        let mut value: fmpz = fmpz::default();
-
-        // Convert Scalar to bytes
-        let bytes = scalar.to_bytes_le();
-
-        // Interpret the bytes as an array of mp_limb_t
-        let limbs = bytes.as_ptr() as *const flint_sys::deps::mp_limb_t;
-        let limbs_len = (bytes.len() / std::mem::size_of::<flint_sys::deps::mp_limb_t>())
-            as flint_sys::deps::mp_limb_signed_t;
-
-        unsafe {
-            fmpz_set_ui_array(&mut value as *mut fmpz, limbs, limbs_len);
-        }
-
-        Fmpz { value }
-    }
-
-    pub fn to_scalar(&self) -> Scalar {
-        // Allocate space for the limbs
-        // note that since our scalars are in the bls field
-        // we know that they are 256 bits long, and thus have 4 limbs
-        let num_limbs = 4;
-        let mut limbs = vec![0 as flint_sys::deps::mp_limb_t; num_limbs as usize];
-
-        // Get the limbs from fmpz
-        unsafe {
-            fmpz_get_ui_array(
-                limbs.as_mut_ptr(),
-                num_limbs as flint_sys::deps::mp_limb_signed_t,
-                &self.value as *const fmpz,
-            );
-        }
-        // Allocate space for the byte array directly
-        let mut byte_array = [0u8; 32];
-
-        // Convert the limbs to bytes
-        unsafe {
-            let byte_slice = std::slice::from_raw_parts_mut(
-                byte_array.as_mut_ptr() as *mut flint_sys::deps::mp_limb_t,
-                num_limbs,
-            );
-            byte_slice.copy_from_slice(&limbs);
-        }
-
-        // Convert the byte array to a Scalar
-        Scalar::from_bytes_le(&byte_array).unwrap()
-    }
-}
-
-// find the polynomial (x + s_1)(x + s_2)...(x + s_n) for s_n in scalars
-pub fn get_final_poly(scalars: &Vec<Scalar>) -> Vec<Scalar> {
-    // Convert Scalars to Fmpz and negate them as the FLINT function expects the roots to be negated
-    let xs: Vec<fmpz> = scalars
-        .iter()
-        .map(|s| Fmpz::from_scalar(s.neg()).value)
-        .collect();
-
-    // Get the prime modulus
-    let fmpz_prime: fmpz =
-        Fmpz::from_string(Scalar::MODULUS.to_string().chars().skip(2).collect()).value;
-
-    // initialize the vector to store the coefficients
-    let mut coeffs: Vec<Scalar> = Vec::new();
-
-    unsafe {
-        // Initialize the polynomial
-        let mut poly: fmpz_poly_t = std::mem::zeroed();
-        fmpz_poly_init(&mut poly as *mut _);
-
-        // Call the FLINT function
-        fmpz_mod_poly_product_roots_fmpz_vec(
-            &mut poly as *mut _,
-            xs.as_ptr(),
-            xs.len() as i64,
-            &fmpz_prime as *const _,
-        );
-
-        // Extract the coefficients
-        let length_poly = fmpz_poly_length(&poly as *const _);
-        for i in 0..length_poly {
-            let mut coeff = fmpz::default();
-            fmpz_poly_get_coeff_fmpz(&mut coeff as *mut _, &poly as *const _, i as i64);
-            let coeff_fmpz = Fmpz { value: coeff };
-            coeffs.push(coeff_fmpz.to_scalar());
-            fmpz_clear(&mut coeff as *mut _);
-        }
-
-        // Clear the polynomial and context
-        fmpz_poly_clear(&mut poly as *mut _);
-    }
-    coeffs
+    coefficients
 }
 
 #[test]
-fn test_compare_flint_halo2_impl() {
-    // set N to 1_000
-    const N: u32 = 1_000;
-    let mut rng = thread_rng();
+fn coefficients_match_independent_product() {
+    let mut rng = StdRng::seed_from_u64(0xacc);
+    for n in [0, 1, 2, 3, 5, 8, 17, 32, 65, 128] {
+        let inputs: Vec<_> = (0..n).map(|_| Scalar::random(&mut rng)).collect();
+        let actual = get_coeff_from_roots(&inputs);
+        assert_eq!(actual, reference(&inputs), "input count {n}");
+        assert_eq!(actual.len(), n + 1);
+        assert_eq!(actual.last(), Some(&Scalar::ONE));
+        let mut reversed = inputs.clone();
+        reversed.reverse();
+        assert_eq!(actual, get_coeff_from_roots(&reversed));
+    }
+}
 
-    // Generate N random scalars
-    let scalars: Vec<Scalar> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
-    let coeff1: Vec<Scalar> = get_final_poly(&scalars);
-    let coeff2 = get_coeff_from_roots(&scalars);
-    assert!(coeff1 == coeff2);
+#[test]
+fn sign_zero_and_multiplicity_are_preserved() {
+    for inputs in [
+        vec![],
+        vec![Scalar::ZERO],
+        vec![-Scalar::ONE],
+        vec![Scalar::ONE; 5],
+        vec![Scalar::ZERO, Scalar::ONE, -Scalar::ONE],
+    ] {
+        assert_eq!(get_coeff_from_roots(&inputs), reference(&inputs));
+    }
+    assert_eq!(get_coeff_from_roots(&[Scalar::ONE]), vec![Scalar::ONE; 2]);
+    assert_eq!(
+        get_coeff_from_roots(&[Scalar::ONE; 2]),
+        vec![Scalar::ONE, Scalar::from(2), Scalar::ONE]
+    );
+}
+
+#[test]
+fn both_commitments_equal_direct_polynomial_evaluation() {
+    // Public test fixture only: a real setup must not disclose tau.
+    let tau = Scalar::from(7);
+    let mut rng = StdRng::seed_from_u64(0xc01117);
+    for n in [0, 1, 2, 5, 17] {
+        let inputs: Vec<_> = (0..n).map(|_| Scalar::random(&mut rng)).collect();
+        let value = inputs.iter().fold(Scalar::ONE, |acc, x| acc * (tau + x));
+        let powers: Vec<_> = (0..=n)
+            .scan(Scalar::ONE, |power, _| {
+                let current = *power;
+                *power *= tau;
+                Some(current)
+            })
+            .collect();
+        let g1: Vec<_> = powers
+            .iter()
+            .map(|x| G1Projective::generator() * x)
+            .collect();
+        let g2: Vec<_> = powers
+            .iter()
+            .map(|x| G2Projective::generator() * x)
+            .collect();
+        let mut c1 = G1Projective::identity();
+        let mut c2 = G2Projective::identity();
+        get_poly_commitment_g1(&mut c1, inputs.as_ptr(), n, g1.as_ptr(), n + 1);
+        get_poly_commitment_g2(&mut c2, inputs.as_ptr(), n, g2.as_ptr(), n + 1);
+        assert_eq!(c1, G1Projective::generator() * value);
+        assert_eq!(c2, G2Projective::generator() * value);
+        assert_eq!(
+            pairing(&G1Affine::from(c1), &G2Affine::generator()),
+            pairing(&G1Affine::generator(), &G2Affine::from(c2))
+        );
+    }
 }

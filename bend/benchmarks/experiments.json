@@ -1,0 +1,807 @@
+{
+  "cpu": "Intel Core Ultra 7 258V",
+  "platform": "Linux x86_64",
+  "note": "Exploratory paired medians, CPU 0, 31 batches; prototypes kept only when final source and proofs agree. Ratios compare against the stated baseline, not across runs.",
+  "experiments": [
+    {
+      "seed": "0xadd",
+      "repeats": 31,
+      "cpu": 0,
+      "rows": [
+        {
+          "n": 0,
+          "ns": 73,
+          "nine_ns": 73,
+          "ratio": 1.0,
+          "rust_ns": 19
+        },
+        {
+          "n": 1,
+          "ns": 325,
+          "nine_ns": 323,
+          "ratio": 1.0062,
+          "rust_ns": 59
+        },
+        {
+          "n": 8,
+          "ns": 4292,
+          "nine_ns": 4330,
+          "ratio": 0.9912,
+          "rust_ns": 52524
+        },
+        {
+          "n": 16,
+          "ns": 13576,
+          "nine_ns": 13765,
+          "ratio": 0.9863,
+          "rust_ns": 99170
+        },
+        {
+          "n": 24,
+          "ns": 28311,
+          "nine_ns": 28616,
+          "ratio": 0.9893,
+          "rust_ns": 138644
+        },
+        {
+          "n": 32,
+          "ns": 47561,
+          "nine_ns": 48162,
+          "ratio": 0.9875,
+          "rust_ns": 203652
+        },
+        {
+          "n": 33,
+          "ns": 82315,
+          "nine_ns": 88507,
+          "ratio": 0.93,
+          "rust_ns": 210431
+        },
+        {
+          "n": 48,
+          "ns": 117251,
+          "nine_ns": 119824,
+          "ratio": 0.9785,
+          "rust_ns": 280990
+        },
+        {
+          "n": 63,
+          "ns": 158536,
+          "nine_ns": 161362,
+          "ratio": 0.9825,
+          "rust_ns": 390351
+        },
+        {
+          "n": 64,
+          "ns": 162156,
+          "nine_ns": 164129,
+          "ratio": 0.988,
+          "rust_ns": 430850
+        },
+        {
+          "n": 65,
+          "ns": 281454,
+          "nine_ns": 307108,
+          "ratio": 0.9165,
+          "rust_ns": 432120
+        },
+        {
+          "n": 96,
+          "ns": 399032,
+          "nine_ns": 416233,
+          "ratio": 0.9587,
+          "rust_ns": 586800
+        },
+        {
+          "n": 127,
+          "ns": 499359,
+          "nine_ns": 513727,
+          "ratio": 0.972,
+          "rust_ns": 836338
+        },
+        {
+          "n": 128,
+          "ns": 505492,
+          "nine_ns": 511288,
+          "ratio": 0.9887,
+          "rust_ns": 900491
+        },
+        {
+          "n": 129,
+          "ns": 901206,
+          "nine_ns": 1010946,
+          "ratio": 0.8914,
+          "rust_ns": 918231
+        },
+        {
+          "n": 192,
+          "ns": 1334771,
+          "nine_ns": 1390373,
+          "ratio": 0.96,
+          "rust_ns": 1209979
+        },
+        {
+          "n": 255,
+          "ns": 1578017,
+          "nine_ns": 1591598,
+          "ratio": 0.9915,
+          "rust_ns": 1807756
+        },
+        {
+          "n": 256,
+          "ns": 1598201,
+          "nine_ns": 1593543,
+          "ratio": 1.0029,
+          "rust_ns": 1958089
+        }
+      ],
+      "variant": "nine_nopad",
+      "decision": "kept",
+      "description": "Remove input padding; retain convolution width.",
+      "baseline": "nine-product leaf alone",
+      "prototype_source_sha256": "69b290eafa8ad648f2c481a2dc4a3d0d79c6e22d9f1d708c32f9badba0124c3d"
+    },
+    {
+      "seed": "0xadd",
+      "repeats": 31,
+      "cpu": 0,
+      "rows": [
+        {
+          "n": 0,
+          "ns": 75,
+          "nine_ns": 75,
+          "ratio": 1.0,
+          "rust_ns": 19
+        },
+        {
+          "n": 1,
+          "ns": 337,
+          "nine_ns": 335,
+          "ratio": 1.006,
+          "rust_ns": 61
+        },
+        {
+          "n": 8,
+          "ns": 4524,
+          "nine_ns": 4547,
+          "ratio": 0.9949,
+          "rust_ns": 53223
+        },
+        {
+          "n": 16,
+          "ns": 14426,
+          "nine_ns": 14449,
+          "ratio": 0.9984,
+          "rust_ns": 104111
+        },
+        {
+          "n": 24,
+          "ns": 28986,
+          "nine_ns": 29149,
+          "ratio": 0.9944,
+          "rust_ns": 142380
+        },
+        {
+          "n": 32,
+          "ns": 48942,
+          "nine_ns": 48791,
+          "ratio": 1.0031,
+          "rust_ns": 205034
+        },
+        {
+          "n": 33,
+          "ns": 77258,
+          "nine_ns": 91186,
+          "ratio": 0.8473,
+          "rust_ns": 210620
+        },
+        {
+          "n": 48,
+          "ns": 117741,
+          "nine_ns": 123132,
+          "ratio": 0.9562,
+          "rust_ns": 284327
+        },
+        {
+          "n": 63,
+          "ns": 162619,
+          "nine_ns": 163679,
+          "ratio": 0.9935,
+          "rust_ns": 392000
+        },
+        {
+          "n": 64,
+          "ns": 166616,
+          "nine_ns": 167928,
+          "ratio": 0.9922,
+          "rust_ns": 428430
+        },
+        {
+          "n": 65,
+          "ns": 258123,
+          "nine_ns": 314658,
+          "ratio": 0.8203,
+          "rust_ns": 435291
+        },
+        {
+          "n": 96,
+          "ns": 397700,
+          "nine_ns": 423346,
+          "ratio": 0.9394,
+          "rust_ns": 586941
+        },
+        {
+          "n": 127,
+          "ns": 518170,
+          "nine_ns": 523066,
+          "ratio": 0.9906,
+          "rust_ns": 842942
+        },
+        {
+          "n": 128,
+          "ns": 555230,
+          "nine_ns": 559503,
+          "ratio": 0.9924,
+          "rust_ns": 940537
+        },
+        {
+          "n": 129,
+          "ns": 844649,
+          "nine_ns": 1053232,
+          "ratio": 0.802,
+          "rust_ns": 950269
+        },
+        {
+          "n": 192,
+          "ns": 1330538,
+          "nine_ns": 1428334,
+          "ratio": 0.9315,
+          "rust_ns": 1251881
+        },
+        {
+          "n": 255,
+          "ns": 1650790,
+          "nine_ns": 1655058,
+          "ratio": 0.9974,
+          "rust_ns": 1839644
+        },
+        {
+          "n": 256,
+          "ns": 1633696,
+          "nine_ns": 1644988,
+          "ratio": 0.9931,
+          "rust_ns": 1992661
+        }
+      ],
+      "variant": "nine_nopad_empty",
+      "decision": "kept",
+      "description": "Also replace empty four-coefficient leaves with seven zeros.",
+      "baseline": "nine-product leaf alone",
+      "prototype_source_sha256": "2637db9c2930e87466f04ec789e4fcdd1183cd0769d83e0182758ba8738f9a6d"
+    },
+    {
+      "seed": "0xadd",
+      "repeats": 31,
+      "cpu": 0,
+      "rows": [
+        {
+          "n": 0,
+          "ns": 77,
+          "nine_ns": 78,
+          "ratio": 0.9872,
+          "rust_ns": 22
+        },
+        {
+          "n": 1,
+          "ns": 338,
+          "nine_ns": 338,
+          "ratio": 1.0,
+          "rust_ns": 62
+        },
+        {
+          "n": 8,
+          "ns": 4543,
+          "nine_ns": 4565,
+          "ratio": 0.9952,
+          "rust_ns": 53989
+        },
+        {
+          "n": 16,
+          "ns": 14518,
+          "nine_ns": 14518,
+          "ratio": 1.0,
+          "rust_ns": 103327
+        },
+        {
+          "n": 24,
+          "ns": 30230,
+          "nine_ns": 30244,
+          "ratio": 0.9995,
+          "rust_ns": 145589
+        },
+        {
+          "n": 32,
+          "ns": 49805,
+          "nine_ns": 50145,
+          "ratio": 0.9932,
+          "rust_ns": 211764
+        },
+        {
+          "n": 33,
+          "ns": 84594,
+          "nine_ns": 94913,
+          "ratio": 0.8913,
+          "rust_ns": 216236
+        },
+        {
+          "n": 48,
+          "ns": 119922,
+          "nine_ns": 127802,
+          "ratio": 0.9383,
+          "rust_ns": 311002
+        },
+        {
+          "n": 63,
+          "ns": 162119,
+          "nine_ns": 169610,
+          "ratio": 0.9558,
+          "rust_ns": 411623
+        },
+        {
+          "n": 64,
+          "ns": 165030,
+          "nine_ns": 173268,
+          "ratio": 0.9525,
+          "rust_ns": 442033
+        },
+        {
+          "n": 65,
+          "ns": 296767,
+          "nine_ns": 330558,
+          "ratio": 0.8978,
+          "rust_ns": 465418
+        },
+        {
+          "n": 96,
+          "ns": 421610,
+          "nine_ns": 444406,
+          "ratio": 0.9487,
+          "rust_ns": 621964
+        },
+        {
+          "n": 127,
+          "ns": 541302,
+          "nine_ns": 564900,
+          "ratio": 0.9582,
+          "rust_ns": 942279
+        },
+        {
+          "n": 128,
+          "ns": 546768,
+          "nine_ns": 569206,
+          "ratio": 0.9606,
+          "rust_ns": 1035934
+        },
+        {
+          "n": 129,
+          "ns": 975535,
+          "nine_ns": 1096030,
+          "ratio": 0.8901,
+          "rust_ns": 1019451
+        },
+        {
+          "n": 192,
+          "ns": 1435613,
+          "nine_ns": 1509161,
+          "ratio": 0.9513,
+          "rust_ns": 1341830
+        },
+        {
+          "n": 255,
+          "ns": 1723599,
+          "nine_ns": 1753114,
+          "ratio": 0.9832,
+          "rust_ns": 1979839
+        },
+        {
+          "n": 256,
+          "ns": 1725925,
+          "nine_ns": 1772798,
+          "ratio": 0.9736,
+          "rust_ns": 2174679
+        }
+      ],
+      "variant": "nine_nopad_mont",
+      "decision": "kept",
+      "description": "Also compute streaming leaves directly in Montgomery form.",
+      "baseline": "nine-product leaf alone",
+      "prototype_source_sha256": "35cd22361157ad1491da89aeb419378641fdd3ca257c5d4de27c722114481958"
+    },
+    {
+      "seed": "0xadd",
+      "repeats": 31,
+      "cpu": 0,
+      "rows": [
+        {
+          "n": 0,
+          "ns": 87,
+          "nine_ns": 76,
+          "ratio": 1.1447,
+          "rust_ns": 20
+        },
+        {
+          "n": 1,
+          "ns": 350,
+          "nine_ns": 340,
+          "ratio": 1.0294,
+          "rust_ns": 62
+        },
+        {
+          "n": 8,
+          "ns": 4416,
+          "nine_ns": 4448,
+          "ratio": 0.9928,
+          "rust_ns": 53515
+        },
+        {
+          "n": 16,
+          "ns": 13867,
+          "nine_ns": 13960,
+          "ratio": 0.9933,
+          "rust_ns": 101484
+        },
+        {
+          "n": 24,
+          "ns": 38388,
+          "nine_ns": 28907,
+          "ratio": 1.328,
+          "rust_ns": 140057
+        },
+        {
+          "n": 32,
+          "ns": 51707,
+          "nine_ns": 48632,
+          "ratio": 1.0632,
+          "rust_ns": 203779
+        },
+        {
+          "n": 33,
+          "ns": 94280,
+          "nine_ns": 89532,
+          "ratio": 1.053,
+          "rust_ns": 210154
+        },
+        {
+          "n": 48,
+          "ns": 128229,
+          "nine_ns": 122085,
+          "ratio": 1.0503,
+          "rust_ns": 281842
+        },
+        {
+          "n": 63,
+          "ns": 157182,
+          "nine_ns": 161782,
+          "ratio": 0.9716,
+          "rust_ns": 388363
+        },
+        {
+          "n": 64,
+          "ns": 158264,
+          "nine_ns": 164535,
+          "ratio": 0.9619,
+          "rust_ns": 423596
+        },
+        {
+          "n": 65,
+          "ns": 295669,
+          "nine_ns": 310556,
+          "ratio": 0.9521,
+          "rust_ns": 431830
+        },
+        {
+          "n": 96,
+          "ns": 430642,
+          "nine_ns": 425859,
+          "ratio": 1.0112,
+          "rust_ns": 592104
+        },
+        {
+          "n": 127,
+          "ns": 502096,
+          "nine_ns": 518385,
+          "ratio": 0.9686,
+          "rust_ns": 842766
+        },
+        {
+          "n": 128,
+          "ns": 505568,
+          "nine_ns": 520112,
+          "ratio": 0.972,
+          "rust_ns": 911199
+        },
+        {
+          "n": 129,
+          "ns": 931730,
+          "nine_ns": 1015807,
+          "ratio": 0.9172,
+          "rust_ns": 917734
+        },
+        {
+          "n": 192,
+          "ns": 1397474,
+          "nine_ns": 1412389,
+          "ratio": 0.9894,
+          "rust_ns": 1236149
+        },
+        {
+          "n": 255,
+          "ns": 1581505,
+          "nine_ns": 1612597,
+          "ratio": 0.9807,
+          "rust_ns": 1822287
+        },
+        {
+          "n": 256,
+          "ns": 1589559,
+          "nine_ns": 1615623,
+          "ratio": 0.9839,
+          "rust_ns": 1962570
+        }
+      ],
+      "variant": "nine_nopad_cut16",
+      "decision": "discarded",
+      "description": "Earlier tree splitting regresses several smaller sizes.",
+      "baseline": "nine-product leaf alone",
+      "prototype_source_sha256": "f47ec6e18c1c5d30be7afbd128a4babb731820aca89d3ce878f0267ca9b5ea8a"
+    },
+    {
+      "seed": "0xadd",
+      "repeats": 31,
+      "cpu": 0,
+      "rows": [
+        {
+          "n": 0,
+          "ns": 98,
+          "nine_ns": 77,
+          "ratio": 1.2727,
+          "rust_ns": 21
+        },
+        {
+          "n": 1,
+          "ns": 355,
+          "nine_ns": 333,
+          "ratio": 1.0661,
+          "rust_ns": 61
+        },
+        {
+          "n": 8,
+          "ns": 4387,
+          "nine_ns": 4405,
+          "ratio": 0.9959,
+          "rust_ns": 52733
+        },
+        {
+          "n": 16,
+          "ns": 17893,
+          "nine_ns": 14033,
+          "ratio": 1.2751,
+          "rust_ns": 100639
+        },
+        {
+          "n": 24,
+          "ns": 43652,
+          "nine_ns": 28948,
+          "ratio": 1.5079,
+          "rust_ns": 141129
+        },
+        {
+          "n": 32,
+          "ns": 53361,
+          "nine_ns": 48941,
+          "ratio": 1.0903,
+          "rust_ns": 205261
+        },
+        {
+          "n": 33,
+          "ns": 98795,
+          "nine_ns": 89535,
+          "ratio": 1.1034,
+          "rust_ns": 209245
+        },
+        {
+          "n": 48,
+          "ns": 138674,
+          "nine_ns": 122589,
+          "ratio": 1.1312,
+          "rust_ns": 281345
+        },
+        {
+          "n": 63,
+          "ns": 161003,
+          "nine_ns": 164050,
+          "ratio": 0.9814,
+          "rust_ns": 391427
+        },
+        {
+          "n": 64,
+          "ns": 162073,
+          "nine_ns": 166184,
+          "ratio": 0.9753,
+          "rust_ns": 429040
+        },
+        {
+          "n": 65,
+          "ns": 302733,
+          "nine_ns": 310869,
+          "ratio": 0.9738,
+          "rust_ns": 432367
+        },
+        {
+          "n": 96,
+          "ns": 447160,
+          "nine_ns": 422982,
+          "ratio": 1.0572,
+          "rust_ns": 582864
+        },
+        {
+          "n": 127,
+          "ns": 507384,
+          "nine_ns": 515945,
+          "ratio": 0.9834,
+          "rust_ns": 843535
+        },
+        {
+          "n": 128,
+          "ns": 507510,
+          "nine_ns": 521506,
+          "ratio": 0.9732,
+          "rust_ns": 909987
+        },
+        {
+          "n": 129,
+          "ns": 949436,
+          "nine_ns": 1017731,
+          "ratio": 0.9329,
+          "rust_ns": 923121
+        },
+        {
+          "n": 192,
+          "ns": 1452765,
+          "nine_ns": 1405036,
+          "ratio": 1.034,
+          "rust_ns": 1234422
+        },
+        {
+          "n": 255,
+          "ns": 1610839,
+          "nine_ns": 1616829,
+          "ratio": 0.9963,
+          "rust_ns": 1821748
+        },
+        {
+          "n": 256,
+          "ns": 1597733,
+          "nine_ns": 1614465,
+          "ratio": 0.9896,
+          "rust_ns": 1973225
+        }
+      ],
+      "variant": "nine_nopad_cut8",
+      "decision": "discarded",
+      "description": "Earlier tree splitting regresses several smaller sizes.",
+      "baseline": "nine-product leaf alone",
+      "prototype_source_sha256": "1cf1d63e93bdba773315fd7988c182fe1d28078ef7e1a2376d2ca4cd8361d290"
+    },
+    {
+      "seed": "0xadd",
+      "repeats": 31,
+      "cpu": 0,
+      "rows": [
+        {
+          "n": 33,
+          "ns": 71733,
+          "combined_ns": 74216,
+          "ratio": 0.9665,
+          "rust_ns": 207684
+        },
+        {
+          "n": 48,
+          "ns": 113805,
+          "combined_ns": 113611,
+          "ratio": 1.0017,
+          "rust_ns": 287134
+        },
+        {
+          "n": 63,
+          "ns": 159699,
+          "combined_ns": 160047,
+          "ratio": 0.9978,
+          "rust_ns": 400311
+        },
+        {
+          "n": 64,
+          "ns": 164182,
+          "combined_ns": 163938,
+          "ratio": 1.0015,
+          "rust_ns": 432928
+        },
+        {
+          "n": 65,
+          "ns": 242747,
+          "combined_ns": 255892,
+          "ratio": 0.9486,
+          "rust_ns": 443645
+        },
+        {
+          "n": 96,
+          "ns": 395133,
+          "combined_ns": 397168,
+          "ratio": 0.9949,
+          "rust_ns": 608490
+        },
+        {
+          "n": 127,
+          "ns": 518410,
+          "combined_ns": 515974,
+          "ratio": 1.0047,
+          "rust_ns": 860398
+        },
+        {
+          "n": 128,
+          "ns": 518373,
+          "combined_ns": 522320,
+          "ratio": 0.9924,
+          "rust_ns": 938224
+        },
+        {
+          "n": 129,
+          "ns": 803365,
+          "combined_ns": 853592,
+          "ratio": 0.9412,
+          "rust_ns": 941015
+        },
+        {
+          "n": 160,
+          "ns": 1170194,
+          "combined_ns": 1185077,
+          "ratio": 0.9874,
+          "rust_ns": 1121522
+        },
+        {
+          "n": 192,
+          "ns": 1336184,
+          "combined_ns": 1346481,
+          "ratio": 0.9924,
+          "rust_ns": 1272263
+        },
+        {
+          "n": 224,
+          "ns": 1516316,
+          "combined_ns": 1509824,
+          "ratio": 1.0043,
+          "rust_ns": 1460593
+        },
+        {
+          "n": 255,
+          "ns": 1663119,
+          "combined_ns": 1652402,
+          "ratio": 1.0065,
+          "rust_ns": 1872007
+        },
+        {
+          "n": 256,
+          "ns": 1672812,
+          "combined_ns": 1662000,
+          "ratio": 1.0065,
+          "rust_ns": 2035215
+        }
+      ],
+      "variant": "all_empty",
+      "decision": "discarded",
+      "description": "Whole-recursion empty pruning gains at a few boundaries but is neutral or slightly slower at full sizes; no final proof integration.",
+      "baseline": "combined optimized kernel",
+      "prototype_source_sha256": "2ee35649d44713c2f424c67f5ab9a4ef50b521d8daabf15a7015bb0d5b25a98e"
+    }
+  ]
+}

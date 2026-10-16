@@ -61,7 +61,8 @@ pub fn fft_mul(left: &[Scalar], right: &[Scalar]) -> Vec<Scalar> {
 
 /*
     This function calculates the coefficients of the polynomial with roots given by the input `roots`.
-    The polynomial is of the form `f(x) = (x - roots[0]) * (x - roots[1]) * ... * (x - roots[n-1])`.
+    The polynomial is of the form `f(x) = (x + roots[0]) * (x + roots[1]) * ... * (x + roots[n-1])`.
+    Inputs are the negated roots; coefficients are returned in ascending degree order.
     The function returns the coefficients of the polynomial in the form of a vector.
 */
 pub fn get_coeff_from_roots(roots: &[Scalar]) -> Vec<Scalar> {
@@ -140,6 +141,8 @@ pub extern "C" fn get_poly_commitment_g2(
 #[cfg(test)]
 mod test_get_poly_commitments {
     use super::*;
+    use blstrs::{pairing, G1Affine, G2Affine};
+    use group::{prime::PrimeCurveAffine, Group};
     // in this test we will calculate the polynomial commitment a = g1^f(tau) and b = g2^f(tau)
     // of the polynomial f = (x + 1)^5. Then do the pairing check
     //       e(a,g2) = e(g1,b)
